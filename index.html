@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/Jalan_2.js"></script>
+        <script src="data/Desa_Jeruk_Pamelo_3.js"></script>
+        <script src="data/KantorDesaKelurahan_4.js"></script>
+        <script src="data/InstansiPemerintahan_5.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-4.802741215944314,119.37195545487883],[-4.617588183947657,119.78600269609458]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleMaps_0');
+        map.getPane('pane_GoogleMaps_0').style.zIndex = 400;
+        var layer_GoogleMaps_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleMaps_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+        });
+        layer_GoogleMaps_0;
+        map.addLayer(layer_GoogleMaps_0);
+        map.createPane('pane_GoogleSatellite_1');
+        map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
+        var layer_GoogleSatellite_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_1',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+        });
+        layer_GoogleSatellite_1;
+        map.addLayer(layer_GoogleSatellite_1);
+        function pop_Jalan_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Jalan_2_0() {
+            return {
+                pane: 'pane_Jalan_2',
+                opacity: 1,
+                color: 'rgba(125,139,143,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Jalan_2');
+        map.getPane('pane_Jalan_2').style.zIndex = 402;
+        map.getPane('pane_Jalan_2').style['mix-blend-mode'] = 'normal';
+        var layer_Jalan_2 = new L.geoJson(json_Jalan_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Jalan_2',
+            layerName: 'layer_Jalan_2',
+            pane: 'pane_Jalan_2',
+            onEachFeature: pop_Jalan_2,
+            style: style_Jalan_2_0,
+        });
+        bounds_group.addLayer(layer_Jalan_2);
+        map.addLayer(layer_Jalan_2);
+        function pop_Desa_Jeruk_Pamelo_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Kecamatan</th>\
+                        <td class="visible-with-data" id="Kecamatan">' + (feature.properties['Kecamatan'] !== null ? autolinker.link(feature.properties['Kecamatan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Desa</th>\
+                        <td class="visible-with-data" id="Desa">' + (feature.properties['Desa'] !== null ? autolinker.link(feature.properties['Desa'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Elevasi</th>\
+                        <td class="visible-with-data" id="Elevasi">' + (feature.properties['Elevasi'] !== null ? autolinker.link(feature.properties['Elevasi'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Curah_Hujan</th>\
+                        <td class="visible-with-data" id="Curah_Hujan">' + (feature.properties['Curah_Hujan'] !== null ? autolinker.link(feature.properties['Curah_Hujan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Luas_Lahan</th>\
+                        <td class="visible-with-data" id="Luas_Lahan">' + (feature.properties['Luas_Lahan'] !== null ? autolinker.link(feature.properties['Luas_Lahan'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Produksi_Jeruk_Pamelo</th>\
+                        <td class="visible-with-data" id="Produksi_Jeruk_Pamelo">' + (feature.properties['Produksi_Jeruk_Pamelo'] !== null ? autolinker.link(feature.properties['Produksi_Jeruk_Pamelo'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Jumlah_Petani</th>\
+                        <td class="visible-with-data" id="Jumlah_Petani">' + (feature.properties['Jumlah_Petani'] !== null ? autolinker.link(feature.properties['Jumlah_Petani'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Kulit_Luar</th>\
+                        <td class="visible-with-data" id="Kulit_Luar">' + (feature.properties['Kulit_Luar'] !== null ? autolinker.link(feature.properties['Kulit_Luar'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Kulit_Dalam</th>\
+                        <td class="visible-with-data" id="Kulit_Dalam">' + (feature.properties['Kulit_Dalam'] !== null ? autolinker.link(feature.properties['Kulit_Dalam'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Bulir</th>\
+                        <td class="visible-with-data" id="Bulir">' + (feature.properties['Bulir'] !== null ? autolinker.link(feature.properties['Bulir'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Desa_Jeruk_Pamelo_3_0(feature) {
+            switch(String(feature.properties['Kecamatan'])) {
+                case 'Labakkang':
+                    return {
+                pane: 'pane_Desa_Jeruk_Pamelo_3',
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(228,26,28,0.23529411764705882)',
+                interactive: true,
+            }
+                    break;
+                case 'Ma\'rang':
+                    return {
+                pane: 'pane_Desa_Jeruk_Pamelo_3',
+                opacity: 1,
+                color: 'rgba(254,129,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,127,0,0.26666666666666666)',
+                interactive: true,
+            }
+                    break;
+                case 'Segeri':
+                    return {
+                pane: 'pane_Desa_Jeruk_Pamelo_3',
+                opacity: 1,
+                color: 'rgba(0,207,69,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,207,69,0.23921568627450981)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Desa_Jeruk_Pamelo_3');
+        map.getPane('pane_Desa_Jeruk_Pamelo_3').style.zIndex = 403;
+        map.getPane('pane_Desa_Jeruk_Pamelo_3').style['mix-blend-mode'] = 'normal';
+        var layer_Desa_Jeruk_Pamelo_3 = new L.geoJson(json_Desa_Jeruk_Pamelo_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Desa_Jeruk_Pamelo_3',
+            layerName: 'layer_Desa_Jeruk_Pamelo_3',
+            pane: 'pane_Desa_Jeruk_Pamelo_3',
+            onEachFeature: pop_Desa_Jeruk_Pamelo_3,
+            style: style_Desa_Jeruk_Pamelo_3_0,
+        });
+        bounds_group.addLayer(layer_Desa_Jeruk_Pamelo_3);
+        map.addLayer(layer_Desa_Jeruk_Pamelo_3);
+        function pop_KantorDesaKelurahan_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Desa</strong><br />' + (feature.properties['Desa'] !== null ? autolinker.link(feature.properties['Desa'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Gambar</strong><br />' + (feature.properties['Gambar'] !== null ? '<img src="images/' + String(feature.properties['Gambar']).replace(/[\\\/:]/g, '_').trim() + '">' : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Maps</strong><br />' + (feature.properties['Maps'] !== null ? autolinker.link(feature.properties['Maps'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_KantorDesaKelurahan_4_0(feature) {
+            switch(String(feature.properties['Desa'])) {
+                case 'Alesipitto':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Attang Salo':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Batara':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Bonto Mate\'ne':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kanaungan':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kassiloe':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ma\'rang':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Padang Lampe':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Parenreng':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Patallassang':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Punranga':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tamangapa':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Taraweang':
+                    return {
+                pane: 'pane_KantorDesaKelurahan_4',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_KantorDesaKelurahan_4');
+        map.getPane('pane_KantorDesaKelurahan_4').style.zIndex = 404;
+        map.getPane('pane_KantorDesaKelurahan_4').style['mix-blend-mode'] = 'normal';
+        var layer_KantorDesaKelurahan_4 = new L.geoJson(json_KantorDesaKelurahan_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KantorDesaKelurahan_4',
+            layerName: 'layer_KantorDesaKelurahan_4',
+            pane: 'pane_KantorDesaKelurahan_4',
+            onEachFeature: pop_KantorDesaKelurahan_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_KantorDesaKelurahan_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_KantorDesaKelurahan_4);
+        map.addLayer(layer_KantorDesaKelurahan_4);
+        function pop_InstansiPemerintahan_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Kantor</th>\
+                        <td class="visible-with-data" id="Kantor">' + (feature.properties['Kantor'] !== null ? autolinker.link(feature.properties['Kantor'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gambar</th>\
+                        <td class="visible-with-data" id="Gambar">' + (feature.properties['Gambar'] !== null ? '<img src="images/' + String(feature.properties['Gambar']).replace(/[\\\/:]/g, '_').trim() + '">' : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Maps'] !== null ? autolinker.link(feature.properties['Maps'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_InstansiPemerintahan_5_0(feature) {
+            switch(String(feature.properties['Kantor'])) {
+                case 'Dinas Kependudukan':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dinas Kesehatan':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dinas Pertanian':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kantor BPS':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kantor Badan Pusat Statistik (BPS)':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Camat Labakkang':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Camat Mandalle':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Camat Marang':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Camat Segeri':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Balai Penyuluhan Pertanian Marang':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(26,166,56,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Balai Penyuluhan Pertanian Labakkang':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(26,166,56,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Balai Penyuluhan Pertanian Segeri':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(26,166,56,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Politeknik Pertanian Negeri Pangkep':
+                    return {
+                pane: 'pane_InstansiPemerintahan_5',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(26,166,56,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_InstansiPemerintahan_5');
+        map.getPane('pane_InstansiPemerintahan_5').style.zIndex = 405;
+        map.getPane('pane_InstansiPemerintahan_5').style['mix-blend-mode'] = 'normal';
+        var layer_InstansiPemerintahan_5 = new L.geoJson(json_InstansiPemerintahan_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_InstansiPemerintahan_5',
+            layerName: 'layer_InstansiPemerintahan_5',
+            pane: 'pane_InstansiPemerintahan_5',
+            onEachFeature: pop_InstansiPemerintahan_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_InstansiPemerintahan_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_InstansiPemerintahan_5);
+        map.addLayer(layer_InstansiPemerintahan_5);
+        setBounds();
+        var i = 0;
+        layer_KantorDesaKelurahan_4.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Desa'] !== null?String('<div style="color: #ffffff; font-size: 8pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['Desa']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_KantorDesaKelurahan_4'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_InstansiPemerintahan_5.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Kantor'] !== null?String('<div style="color: #ffffff; font-size: 8pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['Kantor']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_InstansiPemerintahan_5'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_Desa_Jeruk_Pamelo_3,layer_KantorDesaKelurahan_4,layer_InstansiPemerintahan_5]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Desa_Jeruk_Pamelo_3,layer_KantorDesaKelurahan_4,layer_InstansiPemerintahan_5]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Desa_Jeruk_Pamelo_3,layer_KantorDesaKelurahan_4,layer_InstansiPemerintahan_5]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Desa_Jeruk_Pamelo_3,layer_KantorDesaKelurahan_4,layer_InstansiPemerintahan_5]);
+        });
+        </script>
+    </body>
+</html>
